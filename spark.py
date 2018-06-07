@@ -5,16 +5,17 @@ import rlcompleter, readline
 readline.parse_and_bind('tab:complete')
 
  
-def knn_elements(x,d):
+def knn_elements(x,n,d):
  rdd=[]
- long=len(x.first()[1])*d
+ long=n*d
  for i in range(d):
-  rdd.append(x.map(lambda (k,l) : (k+i, list(l))).cache())
+  rdd.append(x.map(lambda (k,l) : (k+i, l)).cache())
  k=sc.union(rdd)
  for i in range(d):
   rdd[i].unpersist()
- return k.reduceByKey(lambda x,y:(x+y)).filter(lambda x:len(x[1])==long).sortByKey(False,1).cache()
+ return k.reduceByKey(lambda x,y:(x+" "+y)).filter(lambda x:len(x[1])==long).sortByKey(False,1).cache()
  
+
 
 
 def deleteHeader(idx, iter):
@@ -32,11 +33,13 @@ def deleteHeader(idx, iter):
 #3.161.058 filas (Incluyendo el header)
 bitcoin = spark.sparkContext.textFile('hdfs:///loudacre/kb/bigBT.csv')
 #100 filas (Incluyendo el header)
-#bitcoin = spark.sparkContext.textFile("bitcoin.csv")
+#bitcoin = spark.sparkContext.textFile('hdfs:///loudacre/kb/smallBt.csv')
 bitcoinWithoutHeader = bitcoin.mapPartitionsWithIndex(deleteHeader)
-bitcoinWithoutHeader = bitcoinWithoutHeader.map(lambda line :np.array(line.split(',')).astype(np.float))
+#bitcoinWithoutHeader = bitcoinWithoutHeader.map(lambda line :np.array(line.split(',')).astype(np.float))
 #x=bitcoinWithoutHeader.map(lambda line:(idGetter(line),dataConvert(line)))
 x=bitcoinWithoutHeader.zipWithIndex().map(lambda (i,u):(u,i)).cache()
-d=2
-k=knn_elements(x,d)	
-k.saveAsTextFile('hdfs:///loudacre/kb/testd33ee')	
+n=len(x.first()[1])
+d=3
+knn_elements(x,n,d).first()	
+
+#k.saveAsTextFile('hdfs:///loudacre/kb/ff')	
