@@ -5,17 +5,19 @@ import math
 def groupMapping(rdd,index,d):
     return rdd.map(lambda (x,y) : (x - index,y))
 
+
+""" TODO:Intetar agrupar mapValues segundo mapValues en el primero map Values,
+    El segundo mapValues lo que hace es hacer la media para esa clase o ese prediccion 
+    ,El ultimo map values lo que hace es pasar el array a un kv con k array de las clases
+    y v el valor predecido. Arreglar porque esta funcion esta mal identada """
+
 #Crea el rdd con las combinaciones de d
-def dRdd(rddInput, d,combFunc = lambda x:numpy.mean(x,0):
+def dRdd(rddInput, d,combFunc = lambda x:np.mean(x,0)):
     rddList = []
     rddInput = rddInput.zipWithIndex().map(lambda (x,y) : (y,x))
     rddList.append(rddInput)
     for index in range(1,d):
         rddList.append(groupMapping(rddInput,index,d))
-    """ TODO:Intetar agrupar mapValues segundo mapValues en el primero map Values,
-    El segundo mapValues lo que hace es hacer la media para esa clase o ese prediccion 
-    ,El ultimo map values lo que hace es pasar el array a un kv con k array de las clases
-    y v el valor predecido. Arreglar porque esta funcion esta mal identada"""
     return spark.sparkContext.union(rddList).groupByKey().filter(lambda (x,y) : len(y) == d).mapValues(list).mapValues(lambda x : combFunc(x)).mapValues(lambda x : (x[0:len(x) - 1],x[len(x) - 1]))
 
 #knn_train es la funcion que ayuda a elegir los valores correctos de k y d
@@ -24,7 +26,7 @@ def dRdd(rddInput, d,combFunc = lambda x:numpy.mean(x,0):
 def knn_train(k,d,XtrainYtrain,Xpredict):
     #apartir de este indice estan todos los datos que tenemos que predecir
     predictGroupIndex = XtrainYtrain.count() - d
-    rddToProcess = spark.sparkContext.union(XtrainYtrain,Xpredict);
+    rddToProcess = XtrainYtrain.union(Xpredict);
     #Recogemos lo agrupado por la func
     DataGrouped = dRdd(rddToProcess,d)
     #YtrainGrouped = TODO: coger los que tienen un indice <= predictGroupIndex
@@ -48,7 +50,7 @@ def deleteHeader(idx, iter):
     if idx>0:
         return(output)
     else:
-    return(output[1:])
+        return(output[1:])
 
 
 
