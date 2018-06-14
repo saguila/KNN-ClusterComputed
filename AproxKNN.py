@@ -1,10 +1,10 @@
 import numpy as np
 import math
 
+
 #Esta funcion se pone porque python si se modifica la variable sigue apuntando a la misma direccion de memoria y hace appends a la lista del mismo rdd continuamente
 def groupMapping(rdd,index,d):
     return rdd.map(lambda (x,y) : (x - index,y))
-
 
 """ TODO:Intetar agrupar mapValues segundo mapValues en el primero map Values,
     El segundo mapValues lo que hace es hacer la media para esa clase o ese prediccion 
@@ -26,17 +26,42 @@ def dRdd(rddInput, d,combFunc = lambda x:np.mean(x,0)):
 def knn_train(k,d,XtrainYtrain,Xpredict):
     #apartir de este indice estan todos los datos que tenemos que predecir
     predictGroupIndex = XtrainYtrain.count() - d
-    rddToProcess = XtrainYtrain.union(Xpredict);
+    rddToProcess = XtrainYtrain.union(Xpredict)
     #Recogemos lo agrupado por la func
     DataGrouped = dRdd(rddToProcess,d)
-    #YtrainGrouped = TODO: coger los que tienen un indice <= predictGroupIndex
-    #No hacer nada con 
-    #XpredictGrouped = coger los que tienen un indice > predictGroupIndex
+	#TODO: Ahorrarse el separar el rdd en los de training y predict con los generatePairRdd se puede hacer si juntas el rdd Grouped 2 veces contra este o cambiarlo por un producto cartesiano todo y un filter
+	#Recuperamos de todo el conjunto agrupado los ejemplos de entrenamiento
+	YtrainGrouped = DataGrouped.filter(lambda (x,y) : x <= predictGroupIndex)
+	#Recuperaremos los ejemplos para prediccion,los primeros es posible que tengan una mezcla de puntos que pertenecen a ejemplos de entrenamiento
+	XpredictGrouped = DataGrouped.filter(lambda (x,y) : x > predictGroupIndex)
+	#Calcular la distancia la salida es un rdd con el tipo (XaPredecir,(La distancia,(YpredecidaParaEsePunto,Ycorrecta)) Da igual saber el punto lo unico que nos interesa es la Y predecida
+	rddWithDistances = generatePairRdd(predictGroupIndex,predictGroupIndex + d).join(YtrainGrouped).map(lambda (x,y) : y).join(XpredictGrouped).map(lambda(x,y):(x,(euclidea_dist(y[0][0],y[1][0]),(y[0][1],y[1][1])))
+	#Los siguientes pasos seria ordenar de menor a mayot r por distancias y sacar los k elementos que nos interesen sacar la media para ver 
+	
     """TODO: 
         (1) Con los XpredictGrouped hacemos join con XtrainGrouped para calcular las distancias,
         (2) Una vez que tenemos las distancias ordenamos el rdd con las distancias de menor a mayor
         (3) sacamos las k primeras distancias(las menores) y en esas filas estaran las Y hacemos una media y sacamos el valor
     """
+
+def euclidea_dist(x,y):
+    dist = 0
+    for i in range(0, len(x) if len(x) > len(y) else len(y)):
+        dist += (x[i] - y[i])**2
+    return math.sqrt(dist)
+
+	
+#Genera el rdd para hacer las ayudar a hacer las uniones de los ejemplos de entrenamiento
+def generatePairRdd(indexPartitioner, totalItems):
+    x = []
+    for i in range(0, indexPartitioner + 1):
+        for j in range(indexPartitioner + 1, totalItems + 1):
+            x.append((i, j))
+    for i in range(indexPartitioner + 1,totalItems + 1):
+        for j in range(i, totalItems + 1):
+            if i != j:
+                x.append((i, j))
+    return spark.sparkContext.parallelize(x)
 
 #TODO: Esta funcion devolvera el rrd con los valores predecidos
 def knn_estimator(k,d,Knowledge,Xpredict):
@@ -63,10 +88,10 @@ d = 2
 
 #Leo los ejemlos de entrenamiento y los tranformo para que este en el tipo de dato soportado por mi algoritmo
 XtrainYtrain = spark.sparkContext.textFile("file:///Users/saguila/bitcoinTrain.csv").mapPartitionsWithIndex(deleteHeader).map(lambda line : np.array(line.split(',')).astype(np.float))
-
+#XtrainYtrain = spark.sparkContext.textFile("file:///C:/bitcoinTrain.csv").mapPartitionsWithIndex(deleteHeader).map(lambda line : np.array(line.split(',')).astype(np.float))
 #Leo los ejemplos sobre los que hago la prediccion
 Xpredict = spark.sparkContext.textFile("file:///Users/saguila/bitcoinPredict.csv").mapPartitionsWithIndex(deleteHeader).map(lambda line : np.array(line.split(',')).astype(np.float))
-
+#Xpredict = spark.sparkContext.textFile("file:///C:/bitcoinPredict.csv").mapPartitionsWithIndex(deleteHeader).map(lambda line : np.array(line.split(',')).astype(np.float))
 #Hay que comentar con el profesor una logica para ir probando d y k para buscar el optimo de manera correcta,teneniendo en cuenta sesgo-varianza
 
 #Si la varianza es muy grande es porque nos ajustamos mucho a la funcion por lo tanto estamos usando un k muy alta.
