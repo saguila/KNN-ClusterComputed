@@ -29,21 +29,16 @@ def knn_train(k,d,XtrainYtrain,Xpredict):
     rddToProcess = XtrainYtrain.union(Xpredict)
     #Recogemos lo agrupado por la func
     DataGrouped = dRdd(rddToProcess,d)
-	#TODO: Ahorrarse el separar el rdd en los de training y predict con los generatePairRdd se puede hacer si juntas el rdd Grouped 2 veces contra este o cambiarlo por un producto cartesiano todo y un filter
-	#Recuperamos de todo el conjunto agrupado los ejemplos de entrenamiento
-	YtrainGrouped = DataGrouped.filter(lambda (x,y) : x <= predictGroupIndex)
-	#Recuperaremos los ejemplos para prediccion,los primeros es posible que tengan una mezcla de puntos que pertenecen a ejemplos de entrenamiento
-	XpredictGrouped = DataGrouped.filter(lambda (x,y) : x > predictGroupIndex)
-	#Calcular la distancia la salida es un rdd con el tipo (XaPredecir,(La distancia,(YpredecidaParaEsePunto,Ycorrecta)) Da igual saber el punto lo unico que nos interesa es la Y predecida
-	rddWithDistances = generatePairRdd(predictGroupIndex,predictGroupIndex + d).join(YtrainGrouped).map(lambda (x,y) : y).join(XpredictGrouped).map(lambda(x,y):(x,(euclidea_dist(y[0][0],y[1][0]),(y[0][1],y[1][1])))
-	#Los siguientes pasos seria ordenar de menor a mayot r por distancias y sacar los k elementos que nos interesen sacar la media para ver 
-	
-    """TODO: 
-        (1) Con los XpredictGrouped hacemos join con XtrainGrouped para calcular las distancias,
-        (2) Una vez que tenemos las distancias ordenamos el rdd con las distancias de menor a mayor
-        (3) sacamos las k primeras distancias(las menores) y en esas filas estaran las Y hacemos una media y sacamos el valor
-    """
-
+    #TODO: Ahorrarse el separar el rdd en los de training y predict con los generatePairRdd se puede hacer si juntas el rdd Grouped 2 veces contra este o cambiarlo por un producto cartesiano todo y un filter
+    #Recuperamos de todo el conjunto agrupado los ejemplos de entrenamiento
+    YtrainGrouped = DataGrouped.filter(lambda (x,y) : x <= predictGroupIndex)
+    #Recuperaremos los ejemplos para prediccion,los primeros es posible que tengan una mezcla de puntos que pertenecen a ejemplos de entrenamiento
+    XpredictGrouped = DataGrouped.filter(lambda (x,y) : x > predictGroupIndex)
+    #Calcular la distancia la salida es un rdd con el tipo (XaPredecir,(La distancia,(YpredecidaParaEsePunto,Ycorrecta)) Da igual saber el punto lo unico que nos interesa es la Y predecida
+    rddWithDistances = generatePairRdd(predictGroupIndex,predictGroupIndex + d).join(YtrainGrouped).map(lambda (x,y) : y).join(XpredictGrouped).map(lambda(x,y):(x,(euclidea_dist(y[0][0],y[1][0]),(y[0][1],y[1][1]))))
+    #Los siguientes pasos seria ordenar de menor a mayot r por distancias y sacar los k elementos que nos interesen sacar la media para ver 
+    rddSortedByPositionDistance = rddWithDistances.sortBy(lambda (x,y) : (x,y[0]))
+    
 def euclidea_dist(x,y):
     dist = 0
     for i in range(0, len(x) if len(x) > len(y) else len(y)):
