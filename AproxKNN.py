@@ -39,8 +39,57 @@ def knn_train(k,d,XtrainYtrain,Xpredict):
     XpredictGrouped = DataGrouped.filter(lambda (x,y) : x > predictGroupIndex)
     #Calcular la distancia la salida es un rdd con el tipo (XaPredecir,(La distancia,(YpredecidaParaEsePunto,Ycorrecta)) Da igual saber el punto lo unico que nos interesa es la Y predecida
     rddWithDistances = generatePairRdd(predictGroupIndex,totalSize - d).join(YtrainGrouped).map(lambda (x,y) : y).join(XpredictGrouped).map(lambda(x,y):(x,(euclidea_dist(y[0][0],y[1][0]),(y[0][1],y[1][1]))))
-    #Los siguientes pasos seria ordenar de menor a mayot r por distancias y sacar los k elementos que nos interesen sacar la media para ver 
     rddSortedByPositionDistance = rddWithDistances.sortBy(lambda (x,y) : (x,y[0]))
+    return betterK(rddSortedByPositionDistance)
+    
+    
+    #Los siguientes pasos seria ordenar de menor a mayot r por distancias y sacar los k elementos que nos interesen sacar la media para ver 
+    #df = rddWithDistances.map(lambda(x,y) : [x,float(y[0]),float(y[1][0]),float(y[1][1])]).toDF()
+    #from pyspark.sql.window import Window
+    #from pyspark.sql.functions import avg, col, row_number
+    #window = Window.partitionBy(df['_1']).orderBy(df['_2'].asc())
+    #df2 = df.select(col('*'), row_number().over(window).alias('k_aprox')).where(col('k_aprox') <= k)
+    #df.select('*', rank().over(window).alias('rank')) .filter(col('rank') <= 2).show() 
+    #Visualizacion #df.select(col('*'), row_number().over(window).alias('k_aprox')).where(col('k_aprox') <= k).orderBy(['_1','k_aprox'],ascending=[1,1]])
+    #Ya no necesito la distancia porque tengo los k mejores
+    #df = df.select(col('*'),row_number().over(window).alias('k_aprox')).where(col('k_aprox') <= k)
+    #df.select(col('*'), row_number().over(window).alias('k_aprox')).where(col('k_aprox') <= k).rdd.map(lambda row : (row['_1'],(np.array(row['_3']),row['_4']))).groupByKey().mapValues(list).mapValues(lambda (x,y): (np.mean(x,0),y))
+    
+
+#returns errorMetric given k
+def metricError(rdd,k):
+    rddGrouped = rdd.groupByKey().cache()
+    return rddGrouped.mapValues(lambda x : list(x)[:k]).mapValues(lambda x : getMetricforK(x)).map(lambda (x,y) : y).sum()
+    
+    
+#returns better value of k
+def betterK(rdd):
+    rddGrouped = rdd.groupByKey().cache()
+    k = 1
+    lastMetric = getMetricError(rddGrouped,k)
+    k +=1
+    while True:
+        actualMetric = getMetricError(rddGrouped,k)
+        k +=1
+        if lastMetric >= actualMetric:
+            break
+    return k
+    
+#returns errorMetric given k
+def getMetricError(rdd,k):
+    return rdd.mapValues(lambda x : list(x)[:k]).mapValues(lambda x : getMetricforK(x)).map(lambda (x,y) : y).sum()
+    
+
+def getMetricforK(array):
+    n = len(array)
+    count = 0
+    correctValue = array[0][1][1]
+    for i in range(0,n):
+        count += array[i][1][0]
+    mean = count / n
+    return abs(mean - correctValue)
+    
+    
     
 def euclidea_dist(x,y):
     dist = 0
@@ -49,6 +98,7 @@ def euclidea_dist(x,y):
     return math.sqrt(dist)
 
 	
+
 #Genera el rdd para hacer las ayudar a hacer las uniones de los ejemplos de entrenamiento
 def generatePairRdd(indexPartitioner, totalItems):
     x = []
@@ -96,4 +146,3 @@ Xpredict = spark.sparkContext.textFile("file:///Users/saguila/bitcoinPredict.csv
 #Con un d grande lo que se hace es generalizar el modelo
 #Conclusiones : k > sobre ajuste del modelo d > generalizacion del modelo , hay que buscar un equilibrio
 
-errorMetrico = kdd_train(k,d,XtrainYtrain,Xpredict)
