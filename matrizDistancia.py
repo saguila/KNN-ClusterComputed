@@ -4,7 +4,7 @@ import rlcompleter, readline
 readline.parse_and_bind('tab:complete')
 
 
-
+#Genera la matriz de distancias
 def distanceMatrix(rdd):
  data=rdd.cartesian(rdd).filter(lambda (x,y):x[0]<y[0])
  data=data.map(lambda (x,y):((x[0],y[0]),(x[1],y[1])))
@@ -47,6 +47,12 @@ def deleteHeader(idx, iter):
     else:
         return(output[1:])
 
+
+#devuelve las distancias de n de la matriz de distancias		
+def getData(matrix,n):
+ row=matrix.filter(lambda (x,y):x[0]==n)
+ col=matrix.flter(lambda (x,y):x[1]==n)
+ return row.union(col)
 		
 Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/Weather.csv").mapPartitionsWithIndex(deleteHeader).map(lambda x:np.array(x.split(","))).map(lambda x: np.float(x[1]))
 d=3
