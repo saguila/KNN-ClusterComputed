@@ -12,32 +12,43 @@ def distanceMatrix(rdd):
  return data
 
  
- 
+#Devuelve la distancia euclidea entre 2 vectores
 def euclidea_dist(x,y):
     dist = 0
     for i in range(0, len(x) if len(x) > len(y) else len(y)):
         dist += (x[i] - y[i])**2
     return math.sqrt(dist)
 	
-	
-def dRddv2(rddInput, d):
+#Genera un RDD en funcion de la D
+def KNN_Elements(rddInput, d):
 	 rddList = []
-	 rddInput = rddInput.zipWithIndex().map(lambda (x,y) : (y,x))
+	 rddInput = rddInput.zipWithIndex().map(lambda (x,y) : (y,defineOrder(x,0)))
 	 rddList.append(rddInput)
 	 for index in range(1,d):
 	    	rddList.append(groupMapping(rddInput,index,d))
-	 return spark.sparkContext.union(rddList).groupByKey().filter(lambda (x,y) : len(y) == d).mapValues(list).sortByKey(False,1)
+	 return spark.sparkContext.union(rddList).groupByKey().filter(lambda (x,y) : len(y) == d).mapValues(list).map(lambda(x,y):(x,sorted(y))).map(lambda(x,y):(x,orderList(y)))
 	 
-	 
-
+#Funcion de mapper: union de RDDs
 def groupMapping(rdd,index,d):
-    return rdd.map(lambda (x,y) : (x - index,y))
+    return rdd.map(lambda (x,y) : (x - index,[y[0]+index,y[1]]))
 	
- 
-def mapDistance(x,cp):
-  return cp.map(lambda (j,k):(j,euclidea_dist(x,k)))
 
+#Funcion de mapper:elimina las IDs de orden
+def eraseOrder(x):
+  k=list()
+  for i in range(0,len(x)):
+   k.append(x[i][1])
+  return k
   
+ 
+ #Funcion de mapper:Genera una ID de orden
+def defineOrder(x,y):
+ k=list()
+ k.append(y)
+ k.append(x)
+ return k
+
+ #Elimina la cabecera de un RDD de entrada si lo tiene. 
 def deleteHeader(idx, iter):
     output=[]
     for sublist in iter:
@@ -48,15 +59,16 @@ def deleteHeader(idx, iter):
         return(output[1:])
 
 
-#devuelve las distancias de n de la matriz de distancias		
+#Devuelve las distancias de n de la matriz de distancias		
 def getData(matrix,n):
  row=matrix.filter(lambda (x,y):x[0]==n)
- col=matrix.flter(lambda (x,y):x[1]==n)
+ col=matrix.filter(lambda (x,y):x[1]==n)
  return row.union(col)
-		
+ 
+ 
 Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/Weather.csv").mapPartitionsWithIndex(deleteHeader).map(lambda x:np.array(x.split(","))).map(lambda x: np.float(x[1]))
 d=3
 rddTratado=dRddv2(Xpredict,d)
 matrix=distanceMatrix(rddTratado)
 matrix.take(10)
-
+matrix.sortBy(lambda (x,y):y).collect()
