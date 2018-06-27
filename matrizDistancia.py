@@ -5,14 +5,16 @@ readline.parse_and_bind('tab:complete')
 
 
 #Genera la matriz de distancias
-def distanceMatrix(rdd):
+def distanceMatrix(rdd,distance):
  data=rdd.cartesian(rdd).filter(lambda (x,y):x[0]<y[0])
  data=data.map(lambda (x,y):((x[0],y[0]),(x[1],y[1])))
- data=data.map(lambda (x,y):(x,euclidea_dist(y[0],y[1])))
- return data
+ measure = {
+	"Manhattan":data.map(lambda (x,y):(x,manhattan_dist(y[0],y[1]))),
+	"Euclidean":data.map(lambda (x,y):(x,euclidea_dist(y[0],y[1]))),
+	"Canberra":data.map(lambda (x,y):(x,canberra_dist(y[0],y[1])))
+		 }
+ return measure.get(distance,"Wrong distance")
 
-
- 
 #Devuelve la distancia euclidea entre 2 vectores
 def euclidea_dist(x,y):
     dist = 0
@@ -20,45 +22,18 @@ def euclidea_dist(x,y):
         dist += (x[i] - y[i])**2
     return math.sqrt(dist)
 
+def manhattan_dist(x,y):
+ dist = 0
+ for i in range(0, len(x) if len(x) > len(y) else len(y)):
+  dist += abs(x[i] - y[i])
+ return dist
 
+def canberra_dist(x,y):
+ dist = 0
+ for i in range(0, len(x) if len(x) > len(y) else len(y)):
+  dist += (abs(x[i] - y[i]))/(abs(x[i])+abs(y[i]))
+ return dist
 
-	
-#Genera un RDD en funcion de la D
-def KNN_Elements(rddInput, d):
-	 rddList = []
-	 rddInput = rddInput.zipWithIndex().map(lambda (x,y) : (y,defineOrder(x,0)))
-	 rddList.append(rddInput)
-	 for index in range(1,d):
-	    	rddList.append(groupMapping(rddInput,index,d))
-	 return spark.sparkContext.union(rddList).groupByKey().filter(lambda (x,y) : len(y) == d).mapValues(list).map(lambda(x,y):(x,sorted(y))).map(lambda(x,y):(x,eraseOrder(y)))
-
-
-
-#Funcion de mapper: union de RDDs
-def groupMapping(rdd,index,d):
-    return rdd.map(lambda (x,y) : (x - index,[y[0]+index,y[1]]))
-
-
-
-#Funcion de mapper:elimina las IDs de orden
-def eraseOrder(x):
-  k=list()
-  for i in range(0,len(x)):
-   k.append(x[i][1])
-  return k
-  
-
-  
- #Funcion de mapper:Genera una ID de orden
-def defineOrder(x,y):
- k=list()
- k.append(y)
- k.append(x)
- return k
-
-
-
- 
  #Elimina la cabecera de un RDD de entrada si lo tiene. 
 def deleteHeader(idx, iter):
     output=[]
@@ -68,8 +43,6 @@ def deleteHeader(idx, iter):
         return(output)
     else:
         return(output[1:])
-
-
 
 		
 #Devuelve las distancias de n de la matriz de distancias		

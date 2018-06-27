@@ -1,8 +1,11 @@
+#Este codigo trata y forma la D Version final.
+
+
 #Esta funcion se pone porque python si se modifica la variable sigue apuntando a la misma direccion de memoria y hace appends a la lista del mismo rdd continuamente
 def groupMapping(rdd,index,d):
     return rdd.map(lambda (x,y) : (x - index,y))
 
-
+	
 #Crea el rdd con las combinaciones de d
 def dRdd(rddInput, d):
     rddList = []
@@ -20,10 +23,12 @@ def groupLineData(string):
  out=list()
  for i in range(0,len(string)):
   aux.append(string[i].split(","))
- for i in range(0,len(aux[0])):
+ #empieza en uno para eliminar la primera columna (Linea Temporal)
+ for i in range(1,len(aux[0])):
   aux2=list()
   for j in range (0,len(aux)):
    aux2.append(float(aux[j][i]))
+  #Agrega la media a la salida corresponediente a cada columna
   out.append(np.mean(aux2))
  return out
 		
