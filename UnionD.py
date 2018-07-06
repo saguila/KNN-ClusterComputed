@@ -1,20 +1,19 @@
-#Este codigo trata y forma la D Version final.
-
-
-#Esta funcion se pone porque python si se modifica la variable sigue apuntando a la misma direccion de memoria y hace appends a la lista del mismo rdd continuamente
 def groupMapping(rdd,index,d):
     return rdd.map(lambda (x,y) : (x - index,y))
 
-	
+
 #Crea el rdd con las combinaciones de d
 def dRdd(rddInput, d):
-    rddList = []
-    rddInput = rddInput.zipWithIndex().map(lambda (x,y) : (y,x))
-    rddList.append(rddInput)
-    for index in range(1,d):
-        rddList.append(groupMapping(rddInput,index,d))
-    return spark.sparkContext.union(rddList).groupByKey().filter(lambda (x,y) : len(y) == d).mapValues(lambda x: groupLineData(list(x)))
-
+ rddList = []
+ rdd=rddInput.zipWithIndex().map(lambda (x,y):(x[0],[y,x[1]]))
+ rddJoin=rddInput.map(lambda(x,y):(x-d,float(y.split(",")[1])))
+ rddList.append(rdd)
+ for index in range(1,d):
+  rddList.append(groupMapping(rdd,index,d))
+ rdd=spark.sparkContext.union(rddList).groupByKey().filter(lambda (x,y) : len(y) == d).mapValues(lambda x: groupLineData(sorted(list(x))))
+ n=rdd.count()
+ pred=rdd.filter(lambda(x,y):x==n-1).map(lambda(x,y):(x,(y,'x')))
+ return rdd.join(rddJoin).union(pred).cache()
 	
 
 #Une la D segun la columna correspondiente de los elementos y hace la media de la misma
@@ -22,23 +21,15 @@ def groupLineData(string):
  aux=list()
  out=list()
  for i in range(0,len(string)):
-  aux.append(string[i].split(","))
- #empieza en uno para eliminar la primera columna (Linea Temporal)
- for i in range(1,len(aux[0])):
-  aux2=list()
-  for j in range (0,len(aux)):
-   aux2.append(float(aux[j][i]))
-  #Agrega la media a la salida corresponediente a cada columna
-  out.append(np.mean(aux2))
+  aux.append(string[i][1].split(","))
+ for i in range(0,len(aux)):
+  for j in range (1,len(aux[0])):
+   out.append(float(aux[i][j]))
  return out
 		
 
 		
 ## Esto son pruebas de funcionamiento ##
-rdd = spark.sparkContext.parallelize(['11,12,13','21,22,23','31,32,33','41,42,43','51,52,53','61,62,63','71,72,73','81,82,83','91,92,93','01,02,03']).cache()
-
-#.zipWithIndex().map(lambda (x,y) : (y,x))
-
-#emptyRdd = spark.sparkContext.emptyRDD().union(rddList)
+rdd = spark.sparkContext.parallelize(['11,12,13','21,22,23','31,32,33','41,42,43','51,52,53','61,62,63','71,72,73','81,82,83','91,92,93','01,02,03']).zipWithIndex().map(lambda (x,y):(y,x)).cache()
 
 dRdd(rdd,3).collect()

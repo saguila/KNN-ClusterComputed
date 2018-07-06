@@ -7,43 +7,14 @@ def KNN_Next(rdd,d,k,distance="Euclidean"):
  #Obtengo la matriz de distancias
  matrix=distanceMatrix(data,distance)
  data.unpersist()
- matrix.cache()
  #Ordeno los datos de la matriz de distancias correspondientes a numero n
- sorted=getData(matrix,n).sortBy(lambda (x,y):y)
+ sorted=getData(matrix,n).sortBy(lambda (x,y):y[0]).zipWithIndex().map(lambda (x,y):(y,x[1][1])).filter(lambda (x,y):x<k).map(lambda (x,y):y).cache()
  matrix.unpersist()
- sorted.cache()
- #Obtengo los k indices correspondientes del RDD para la prediccion
- knn=sorted.map(lambda (x,y):x).zipWithUniqueId().map(lambda (x,y):(y,adjust(n,list(x),d))).filter(lambda(x,y):x<k).map(lambda (x,y):y).take(k)
- sorted.unpersist()
- #distance=sorted.map(lambda (x,y):y).zipWithIndex().filter(lambda(x,y):x<k).map(lambda (x,y):y).collect()
- selected=rdd.filter(lambda (x,y):selectKnnValues(x,knn)).map(lambda (x,y):y).collect()
- #Falta la funcion de peso y estaria completo!!!!!!!!
- #Devuelve la media aritmetica de los valores de K seleccionados
- if k>1:
-  return groupLineData(selected)
- else:
-  return selected
-
+ return sorted.reduce(add)/k
  
-#Coje los elementos KNN elegidos por ID del RDD recibido
-def selectKnnValues(x,knn):
-  if x in knn:
-   return True
-  else:
-   return False
-
-
-#Elije los D siguientes a los K elegidos
-def adjust(n,x,d):
- if x[0]==n:
-  return x[1]+d
- else:
-  return x[0]+d
-
-
-  
-Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/sunspot.month.csv").mapPartitionsWithIndex(deleteHeader).cache()
-d=5
+ 
+Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/Weather.csv").mapPartitionsWithIndex(deleteHeader).cache()
+d=3
 k=3  
 #Puedes pasar por parametro el tipo d distancia que quieras Manhattan,Euclidean y Canberra. Por defecto sera Euclidean
 KNN_Next(Xpredict,d,k)

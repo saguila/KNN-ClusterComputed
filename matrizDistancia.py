@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from operator import add
 import rlcompleter, readline
 readline.parse_and_bind('tab:complete')
 
@@ -7,10 +8,10 @@ readline.parse_and_bind('tab:complete')
 #Genera la matriz de distancias
 def distanceMatrix(rdd,distance):
  data=rdd.cartesian(rdd).filter(lambda (x,y):x[0]<y[0])
- data=data.map(lambda (x,y):((x[0],y[0]),(x[1],y[1])))
+ data=data.map(lambda (x,y):((x[0],y[0]),[x[1:],y[1][0]]))
  measure = {
-	"Manhattan":data.map(lambda (x,y):(x,manhattan_dist(y[0],y[1]))),
-	"Euclidean":data.map(lambda (x,y):(x,euclidea_dist(y[0],y[1]))),
+	"Manhattan":data.map(lambda (x,y):(x,[manhattan_dist(y[0],y[1]),y[0],y[1]])),
+	"Euclidean":data.map(lambda (x,y):(x,[euclidea_dist(y[0][0][0],y[1]),y[0][0][1]])),
 	"Canberra":data.map(lambda (x,y):(x,canberra_dist(y[0],y[1])))
 		 }
  return measure.get(distance,"Wrong distance")
@@ -47,7 +48,4 @@ def deleteHeader(idx, iter):
 		
 #Devuelve las distancias de n de la matriz de distancias		
 def getData(matrix,n):
- row=matrix.filter(lambda (x,y):x[0]==n)
- col=matrix.filter(lambda (x,y):x[1]==n)
- return row.union(col)
-
+ return matrix.filter(lambda (x,y):x[1]==n)
