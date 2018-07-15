@@ -5,10 +5,9 @@ def KNN_Next(rdd,d,k,n,distance="Euclidean"):
  data=dRdd(rdd,d,n)
  rdd=rdd.unpersist()
  data=data.cache()
- p=data.filter(lambda (x,y):x==n).collect()
- knn_last=(spark.sparkContext.broadcast(p))
+ knn_last=(spark.sparkContext.broadcast(data.filter(lambda (x,y):x==n).collect()))
  #Obtengo la matriz de distancias
- return data.mapPartitions(distance(iter(data),knn_last,n))
+ return data.mapPartitions(lambda it : distance(it,knn_last,n))
  #matrix=distanceMatrix(data,distance,n)
  #data=data.unpersist()
  #matrix=matrix.filter(lambda (x,y):x==n).map(lambda (x,y):(y)).map(lambda (x):(sorted(list(x))[:k])).cache()
@@ -16,15 +15,18 @@ def KNN_Next(rdd,d,k,n,distance="Euclidean"):
  return matrix.map(lambda (x):(mean(x)))
 
 def distance(it,knn_last,n):
- fila=it.next()
+ 
+ #fila=it.next()
  data=list()
- while (True):
-  try:
-   data.append(euclidean_dist(fila[1][0],knn_last[1][0]),fila[1][1]) 
-   fila.next()
-  except StopIteration:
-   break
- return data
+ for fila in it:
+ 	data.append(euclidean_dist(fila[1][0],knn_last.value[1][0]),fila[1][1])
+ #while (True):
+  #try:
+   #data.append(euclidean_dist(fila[1][0],knn_last.value[1][0]),fila[1][1]) 
+   #fila.next()
+  #except StopIteration:
+   #break
+ return iter(data)
  
 def mean(l):
  sum = 0;
