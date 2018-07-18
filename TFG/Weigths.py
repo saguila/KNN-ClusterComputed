@@ -6,26 +6,36 @@ def mean(data,weigth):
 		 }
  return solution.get(weigth,"Wrong weigth")
 
- 
+
+
 def prox_weigth(data):
  sum=0
  div=0
- for i in range (0,len(data)):
-  sum+=data[i][1]*(1/data[i][0])
-  div+=1/data[i][0]
- return sum/div
+ try:
+  for i in range (0,len(data)):
+   if(data[i][0]!=0):  
+    sum+=data[i][1]*(1/data[i][0])
+    div+=1/data[i][0]
+  if (div!=0):
+   return sum/div
+  else: 
+   return -1
+ except ZeroDivision:
+  print("error"+str(data))
+ 
 
 
 def same_weigth(data):
- vector=[]
  sum=0
  div=0
  for i in range (0,len(data)):
   sum+=data[i][1]
   div+=1
  return sum/div 
- 
 
+
+
+ 
 def linear_weigth(data):
  sum=0
  div=0

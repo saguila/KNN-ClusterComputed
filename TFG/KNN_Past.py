@@ -1,7 +1,6 @@
 def KNN_Past(rdd,d,k,n,init=100,distance="Euclidean"): 
  rdd=rdd.zipWithIndex().map(lambda (x,y):(y,x))
  data=dRdd(rdd,d,n).cache()
- return data
  #Obtengo la matriz de distancias
  matrix=distanceMatrix(data,distance).cache()
  data.unpersist()
@@ -15,4 +14,4 @@ d=5
 k=3
 n=Xpredict.count()-d  
 #Puedes pasar por parametro el tipo d distancia que quieras Manhattan,Euclidean y Canberra. Por defecto sera Euclidean
-KNN_Past(Xpredict,d,k,n,init=0).collect()
+KNN_Past(Xpredict,d,k,n)

@@ -3,6 +3,7 @@ def groupMapping(rdd,index,d):
 
 
 #Crea el rdd con las combinaciones de d
+
 def dRdd(rddInput, d,n):
  rddList = []
  rdd=rddInput.zipWithIndex().map(lambda (x,y):(x[0],[y,x[1]]))
@@ -15,7 +16,8 @@ def dRdd(rddInput, d,n):
  return rdd.join(rddJoin).union(pred)
 	
 
-#Une la D segun la columna correspondiente de los elementos y hace la media de la misma
+#Une la D segun la columna correspondiente de los elementos
+
 def groupLineData(string):
  aux=list()
  out=list()

@@ -4,7 +4,7 @@ def KNN_Next(rdd,d,k,n,distance="Euclidean",weigth="Proximity"):
  rdd=rdd.zipWithIndex().map(lambda (x,y):(y,x))
  data=dRdd(rdd,d,n)
  rdd=rdd.unpersist()
- data=data.cache()
+ data.cache()
  #Obtengo la matriz de distancias
  matrix=distanceMatrix(data,distance)
  data=data.unpersist()
@@ -15,8 +15,8 @@ def KNN_Next(rdd,d,k,n,distance="Euclidean",weigth="Proximity"):
  
  #Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/bigBT.csv").mapPartitionsWithIndex(deleteHeader).cache()
  
-Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/Weather.csv",1).mapPartitionsWithIndex(deleteHeader).cache()
-d=5
+Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/Weather.csv",4).mapPartitionsWithIndex(deleteHeader).cache()
+d=3
 k=5
 n=Xpredict.count()-d
 #Puedes pasar por parametro el tipo d distancia que quieras Manhattan,Euclidean y Canberra. Por defecto sera Euclidean

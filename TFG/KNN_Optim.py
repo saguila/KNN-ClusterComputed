@@ -19,14 +19,3 @@ def KNN_Optim(rdd,d,k,n,init=100,distance="Euclidean",Error="):
   matrix.unpersist()
  return sorted(optim)[0]
   
- 
- 
-def distanceMatrix(rdd,distance):
- data=rdd.cartesian(rdd).filter(lambda (x,y):x[0]<y[0])
- data=data.map(lambda (x,y):((x[0],y[0]),[x[1:],y[1:]]))
- measure = {
-	"Manhattan":data.map(lambda (x,y):((x[1],y[1][0][1]),[manhattan_dist(y[0][0][0],y[1][0][0]),y[0][0][1]])).groupByKey(),
-	"Euclidean":data.map(lambda (x,y):((x[1],y[1][0][1]),[euclidea_dist(y[0][0][0],y[1][0][0]),y[0][0][1]])).groupByKey(),
-	"Canberra":data.map(lambda (x,y):((x[1],y[1][0][1]),[canberra_dist(y[0][0][0],y[1][0][0]),y[0][0][1]])).groupByKey()
-		 }
- return measure.get(distance,"Wrong distance")

@@ -6,7 +6,6 @@ readline.parse_and_bind('tab:complete')
 
  
 def distanceMatrix(rdd,distance):
- rdd.cache()
  data=rdd.cartesian(rdd).filter(lambda (x,y):x[0]<y[0])
  data=data.map(lambda (x,y):((x[0],y[0]),[x[1:],y[1:]]))
  measure = {
