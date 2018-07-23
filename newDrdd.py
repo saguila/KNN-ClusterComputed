@@ -1,7 +1,15 @@
 
-def dRdd(rdd,d,n):
-	return rdd.zipWithIndex().map(lambda row: dRddMapTransformFunction(row,d,n)).flatMap(lambda x : x).groupByKey().mapValues(list)
+def deleteHeader(idx, iter):
+    output=[]
+    for sublist in iter:
+        output.append(sublist)
+    if idx>0:
+        return(output)
+    else:
+        return(output[1:])
 
+def dRdd(rdd,d,n):
+	return rdd.zipWithIndex().map(lambda row: dRddMapTransformFunction(row,d,n)).flatMap(lambda x : x).groupByKey().mapValues(lambda x : dRddConsolidateIterator(x,d))
 
 def dRddMapTransformFunction(row,d,n):
 	out = []
@@ -14,9 +22,16 @@ def dRddMapTransformFunction(row,d,n):
 				out.append((idx - i,row[0]))
 	return out
 
+def dRddConsolidateIterator(it,d):
+	l = list(it)
+	if len(l) == d:
+		return (l,None)
+	else:
+		value = l.pop()
+		return (l,value)
 
 ## Ejemplo de prueba:
+Xpredict = spark.sparkContext.textFile("hdfs:///loudacre/kb/Weather.csv").mapPartitionsWithIndex(deleteHeader).map(lambda x : float(x.split(',')[1])).cache()
 d = 2
-x = spark.sparkContext.parallelize(["x0","x1","x2","x3","x4","x5","x6"])
-n = x.count()
-dRdd(x,d,n).sortByKey().collect()
+n = Xpredict.count()
+out = dRdd(Xpredict,d,n)
