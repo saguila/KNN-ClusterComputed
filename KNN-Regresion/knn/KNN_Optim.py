@@ -8,7 +8,6 @@ from utils.RDDUtils import reduction
 
 def KNN_Optim(rdd,d,k,n,distance="Euclidean",init=None,weight="Same",err="MAE"):
 	spark = SparkSession.builder.getOrCreate()
-	allData=[]
 	if(init == None):
 		init=(n*2)/3
 	optimData=False
@@ -26,6 +25,7 @@ def KNN_Optim(rdd,d,k,n,distance="Euclidean",init=None,weight="Same",err="MAE"):
 				check=(result*(100/count),j,i)
 			else:
 				check=(math.sqrt(result/count),j,i)	
+			
 			if(optimData==False or optimData[0]>=check[0]):
 				optimData=check
 	return optimData

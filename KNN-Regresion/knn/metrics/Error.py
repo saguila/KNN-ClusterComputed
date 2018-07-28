@@ -14,19 +14,25 @@ def mean_error(pred,value):
  return (value-pred)
 
 def mean_absolute_error(pred,value):
- return abs(pred-value)
+ return abs(value-pred)
 
 def root_mean_squared_error(pred,value):
- return (pred-value)**2
+ return (value-pred)**2
 
 def mean_absolute_percentage_error(pred,value):
 	try:
-		return abs((pred-value)/pred)
+		if(value!=0):
+			return abs((value-pred)/value)
+		else: 
+			return 0
 	except ZeroDivisionError:
 		print("error MAPE")
 
 def mean_percentage_error(pred,value):
 	try:
-		return (pred-value)/pred
+		if(value!=0):
+			return (value-pred)/value
+		else: 
+			return 0
 	except ZeroDivisionError:
 		print("error MPE") 

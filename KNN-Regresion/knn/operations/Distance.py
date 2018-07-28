@@ -45,7 +45,7 @@ def Mdistance(it,knn_train,distance,k):
 				"Manhattan":manhattan_dist(fila[1][0],knn_train.value[i][1][0]),
 				"Canberra":canberra_dist(fila[1][0],knn_train.value[i][1][0])
 				}
-				data1[i][1].append([dist.get(distance,"Wrong distance"),fila[1][1][1][0]])
+				data1[i][1].append([dist.get(distance,"Wrong distance"),-fila[0],fila[1][1][1][0]])
 	for i in range(0,len(knn_train.value)):
 		data.append((data1[i][0],sorted(data1[i][1])[:k]))
 	return iter(data)
